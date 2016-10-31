@@ -1,5 +1,6 @@
 *** Settings ***
 Resource          ../user_credential.txt
+Library           AppiumLibrary
 
 *** Keywords ***
 Clean up mobile test environment
@@ -9,37 +10,36 @@ Click Delete Button
     #Click [Delete]
     Wait Until Page Contains Element    xpath=//div[@id="actionBarItem_Delete"]/button
     Wait Until Page Does Not Contain Element    //div[@class="placeholder detail "]
-    Click Element    xpath=//div[@id="actionBarItem_Delete"]/button
-    Wait Until Page Contains Element    xpath=//button[@title="Delete" and @data-action="Delete"]
+    Wait Exits and Click Element    xpath=//div[@id="actionBarItem_Delete"]/button
+    Wait Until Page Contains Element    xpath=//button[@title="Delete" and @data-aura-class="uiButton forceActionButton"]
 
 Click Edit Button
     #Click [Edit]
     Wait Until Page Contains Element    xpath=//div[@id="actionBarItem_Edit"]/button
     Wait Until Page Does Not Contain Element    //div[@class="placeholder detail "]
-    Click Element    xpath=//div[@id="actionBarItem_Edit"]/button
+    Wait Exits and Click Element    xpath=//div[@id="actionBarItem_Edit"]/button
     Wait Until Page Does Not Contain Element    //div[@class="placeholder detail "]
 
 Click New Button
     Wait Until Page Contains Element    //span[text()="New"]
-    Click Element    //span[text()="New"]
+    Wait Exits and Click Element    //span[text()="New"]
     Wait Until Page Does Not Contain Element    //div[@class="placeholder detail "]
 
 Click Save Button
     Wait Until Page Contains Element    xpath=//span[text()="Save"]
-    Click Element    xpath=//span[text()="Save"]
+    Wait Exits and Click Element    xpath=//span[text()="Save"]
     Wait Until Page Contains Element    //div[@class="placeholder detail "]
     Wait Until Page Does Not Contain Element    //div[@class="placeholder detail "]
 
 Go Back Click
-    Wait Until Page Contains Element    xpath=//a[./span[text()="Back"]]
-    Click Element    //a[./span[text()="Back"]]
+    Wait Exits and Click Element    xpath=//a[./span[text()="Back"]]
 
 Mobile Cases test environment initialization
     Go To Url    http://login.salesforce.com
     Wait Until Page Contains Element    //*[@id="username"]    timeout=600s
-    Input Text    //*[@id="username"]    ${USERNAME}
+    Input Text    //*[@id="username"]    ${AN_USERNAME}
     Wait Until Page Contains Element    //*[@id="password"]    timeout=3s
-    Input Password    //*[@id="password"]    ${PASSWORD}
+    Input Password    //*[@id="password"]    ${AN_PASSWORD}
     Wait Until Page Contains Element    //*[@id="Login"]
     Click Element    //*[@id="Login"]
     Wait Until Page Contains Element    //span[text()="Toggle SideBar"]    timeout=600s
@@ -53,14 +53,22 @@ Navi To Case App
     Wait Until Page Contains Element    class=buttonItem
 
 Refresh MyCases
-    Wait Exits and Click Element    //h2[text()="My Cases"]
+    # In my cases page
     #Wait until "my cases exist"
-    Wait Until Page Contains Element    //div[@class="dark uiAbstractList forceRecordLayout forceFilterListDeprecated hiddenContent"]
-    Wait Exits and Click Element    xpath=(//span[text()="My Cases"])[2]
+    Wait Exits and Click Element    //a[@class="banner hidden offlineBanner forceFilterList"]
+    #Wait Exits and Click Element    xpath=//span[text()="My Cases"]
     #Wait until refresh complete
-    Wait Until Page Contains Element    //div[@class="dark uiAbstractList forceRecordLayout forceFilterListDeprecated"]
+    Wait Exits and Click Element    //a[@class="banner hidden offlineBanner forceFilterList hiddenContent"]
 
 Wait Exits and Click Element
     [Arguments]    @{locator}
+    # Wait and frontend loading exception handling
     Wait Until Page Contains Element    @{locator}
-    Click Element    @{locator}
+    : FOR    ${i}    IN RANGE    1    3
+    \    ${result}    ${returnvalue}    Run Keyword And Ignore Error    Wait Until Element Is Visible    @{locator}
+    \    Exit For Loop If    '${result}'=='PASS' or """StaleElementReferenceException""" not in """${returnvalue}"""
+    \    Sleep    0.5
+    : FOR    ${i}    IN RANGE    1    3
+    \    ${result}    ${returnvalue}    Run Keyword And Ignore Error    Click Element    @{locator}
+    \    Exit For Loop If    '${result}'=='PASS' or """StaleElementReferenceException""" not in """${returnvalue}"""
+    \    Sleep    0.5
